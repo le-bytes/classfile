@@ -8,9 +8,9 @@ pub struct ConstString {
 }
 
 impl Read for ConstString {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
         Ok(Self {
-            string_index: ConstItemIdx::read(buf, consts_count)?,
+            string_index: ConstItemIdx::read(buf, consts_count, empty_const_slots)?,
         })
     }
 }

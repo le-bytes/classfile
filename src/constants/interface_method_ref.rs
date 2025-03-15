@@ -9,9 +9,9 @@ pub struct ConstInterfaceMethodRef {
 }
 
 impl Read for ConstInterfaceMethodRef {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
-        let interface_index = ConstItemIdx::read(buf, consts_count)?;
-        let name_and_type_index = ConstItemIdx::read(buf, consts_count)?;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
+        let interface_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
+        let name_and_type_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
 
         Ok(Self {
             interface_index,

@@ -20,15 +20,15 @@ pub use error::Result;
 use version::ClassFileVersion;
 
 pub trait Read: Sized {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self>;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self>;
 }
 
 impl<T: Read> Read for Vec<T> {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
         let count = buf.read_u16()?;
         let mut vec = Vec::with_capacity(count as usize);
         for _ in 0..count {
-            vec.push(T::read(buf, consts_count)?);
+            vec.push(T::read(buf, consts_count, empty_const_slots)?);
         }
         Ok(vec)
     }
@@ -66,6 +66,7 @@ pub struct ClassFile {
     pub fields: Vec<Field>,
     pub methods: Vec<Method>,
     pub attributes: Vec<Attribute>,
+    pub empty_const_slots: Vec<u16>,
 }
 
 impl ClassFile {
@@ -73,14 +74,15 @@ impl ClassFile {
         let mut buf = Buffer::new(buf);
         Self::check_magic_number(&mut buf)?;
         let version = Self::read_version(&mut buf)?;
-        let (constants, consts_count) = Self::read_constants(&mut buf)?;
+        let (constants, empty_const_slots) = Self::read_constants(&mut buf)?;
+        let consts_count = constants.len() as u16;
         let access_flag = Self::read_access_flags(&mut buf)?;
-        let this_class = ConstItemIdx::read(&mut buf, consts_count)?;
-        let super_class = Option::<ConstItemIdx>::read(&mut buf, consts_count)?;
-        let interfaces = Vec::read(&mut buf, consts_count)?;
-        let fields = Vec::read(&mut buf, consts_count)?;
-        let methods = Vec::read(&mut buf, consts_count)?;
-        let attributes = Vec::read(&mut buf, consts_count)?;
+        let this_class = ConstItemIdx::read(&mut buf, consts_count, &empty_const_slots)?;
+        let super_class = Option::<ConstItemIdx>::read(&mut buf, consts_count, &empty_const_slots)?;
+        let interfaces = Vec::read(&mut buf, consts_count, &empty_const_slots)?;
+        let fields = Vec::read(&mut buf, consts_count, &empty_const_slots)?;
+        let methods = Vec::read(&mut buf, consts_count, &empty_const_slots)?;
+        let attributes = Vec::read(&mut buf, consts_count, &empty_const_slots)?;
 
         Ok(Self {
             version,
@@ -92,6 +94,7 @@ impl ClassFile {
             fields,
             methods,
             attributes,
+            empty_const_slots,
         })
     }
 
@@ -110,19 +113,28 @@ impl ClassFile {
         ClassFileVersion::from(major, minor)
     }
 
-    fn read_constants(buf: &mut Buffer) -> Result<(Constants, u16)> {
+    fn read_constants(buf: &mut Buffer) -> Result<(Constants, Vec<u16>)> {
         let consts_count = buf.read_u16()? - 1;
-        let mut consts = IndexVec::with_capacity(consts_count as usize);
+        let mut empty_const_slots = Vec::new();
+        let mut real_len = 0;
         let mut i = 0;
+        let pos = buf.get_pos();
         while i < consts_count {
-            let item = ConstItem::read(buf, consts_count)?;
+            let item = ConstItem::read(buf, consts_count, &[])?;
             if item.is_8bit() {
                 i += 1;
+                empty_const_slots.push(i);
             }
-            consts.push(item);
+            real_len += 1;
             i += 1;
         }
-        Ok((consts, consts_count))
+        buf.set_pos(pos);
+        let mut consts = IndexVec::with_capacity(real_len);
+        for _ in 0..real_len {
+            let item = ConstItem::read(buf, real_len as u16, &empty_const_slots)?;
+            consts.push(item);
+        }
+        Ok((consts, empty_const_slots))
     }
 
     fn read_access_flags(buf: &mut Buffer) -> Result<ClassAccessFlags> {

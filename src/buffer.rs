@@ -86,6 +86,14 @@ impl<'a> Buffer<'a> {
     pub fn has_more_data(&self) -> bool {
         self.position < self.buffer.len()
     }
+
+    pub fn get_pos(&self) -> usize {
+        self.position
+    }
+
+    pub fn set_pos(&mut self, pos: usize) {
+        self.position = pos;
+    }
 }
 
 #[cfg(test)]

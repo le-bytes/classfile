@@ -6,7 +6,7 @@ pub struct ConstDouble {
 }
 
 impl Read for ConstDouble {
-    fn read(buf: &mut Buffer, _consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, _consts_count: u16, _empty_const_slots: &[u16]) -> Result<Self> {
         Ok(Self {
             double: buf.read_f64()?,
         })

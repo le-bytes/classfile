@@ -32,8 +32,8 @@ pub struct Attribute {
 }
 
 impl Read for Attribute {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
-        let attribute_name_index = ConstItemIdx::read(buf, consts_count)?;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
+        let attribute_name_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
         let len = buf.read_u32()?;
         let bytes = buf.read_bytes(len as usize)?;
 

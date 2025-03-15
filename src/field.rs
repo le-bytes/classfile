@@ -43,11 +43,11 @@ pub struct Field {
 }
 
 impl Read for Field {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
         let access_flag = FieldAccessFlags::read(buf)?;
-        let name_index = ConstItemIdx::read(buf, consts_count)?;
-        let descriptor_index = ConstItemIdx::read(buf, consts_count)?;
-        let attributes = Vec::read(buf, consts_count)?;
+        let name_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
+        let descriptor_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
+        let attributes = Vec::read(buf, consts_count, empty_const_slots)?;
 
         Ok(Self {
             access_flag,

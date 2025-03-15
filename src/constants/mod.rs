@@ -36,25 +36,53 @@ define_index_type! {
 }
 
 impl Read for ConstItemIdx {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_consts_slots: &[u16]) -> Result<Self> {
         let idx = buf.read_u16()?;
-        if idx == 0 || idx > consts_count {
+        if idx == 0 {
+            return Err(ClassReaderError::InvalidConstantPoolIdx(idx));
+        }
+        let idx = idx - 1;
+        let mut offset = 0;
+        for slot in empty_consts_slots {
+            if &idx == slot {
+                return Err(ClassReaderError::InvalidConstantPoolIdx(idx));
+            } else if &idx < slot {
+                break;
+            } else {
+                offset += 1;
+            }
+        }
+        let idx = idx - offset;
+        if idx >= consts_count {
             Err(ClassReaderError::InvalidConstantPoolIdx(idx))
         } else {
-            Ok(ConstItemIdx::from_raw(idx - 1))
+            Ok(ConstItemIdx::from_raw(idx))
         }
     }
 }
 
 impl Read for Option<ConstItemIdx> {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_consts_slots: &[u16]) -> Result<Self> {
         let idx = buf.read_u16()?;
-        if idx > consts_count {
+        if idx == 0 {
+            return Ok(None);
+        }
+        let idx = idx - 1;
+        let mut offset = 0;
+        for slot in empty_consts_slots {
+            if &idx == slot {
+                return Err(ClassReaderError::InvalidConstantPoolIdx(idx));
+            } else if &idx < slot {
+                break;
+            } else {
+                offset += 1;
+            }
+        }
+        let idx = idx - offset;
+        if idx >= consts_count {
             Err(ClassReaderError::InvalidConstantPoolIdx(idx))
-        } else if idx == 0 {
-            Ok(None)
         } else {
-            Ok(Some(ConstItemIdx::from_raw(idx - 1)))
+            Ok(Some(ConstItemIdx::from_raw(idx)))
         }
     }
 }
@@ -86,23 +114,39 @@ impl ConstItem {
 }
 
 impl Read for ConstItem {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
         let tag = buf.read_u8()?;
         Ok(match tag {
-            1 => Self::Utf8(ConstUtf8::read(buf, consts_count)?),
-            3 => Self::Integer(ConstInteger::read(buf, consts_count)?),
-            4 => Self::Float(ConstFloat::read(buf, consts_count)?),
-            5 => Self::Long(ConstLong::read(buf, consts_count)?),
-            6 => Self::Double(ConstDouble::read(buf, consts_count)?),
-            7 => Self::Class(ConstClass::read(buf, consts_count)?),
-            8 => Self::String(ConstString::read(buf, consts_count)?),
-            9 => Self::FieldRef(ConstFieldRef::read(buf, consts_count)?),
-            10 => Self::MethodRef(ConstMethodRef::read(buf, consts_count)?),
-            11 => Self::InterfaceMethodRef(ConstInterfaceMethodRef::read(buf, consts_count)?),
-            12 => Self::NameAndType(ConstNameAndType::read(buf, consts_count)?),
-            15 => Self::MethodHandle(ConstMethodHandle::read(buf, consts_count)?),
-            16 => Self::MethodType(ConstMethodType::read(buf, consts_count)?),
-            18 => Self::InvokeDynamic(ConstInvokeDynamic::read(buf, consts_count)?),
+            1 => Self::Utf8(ConstUtf8::read(buf, consts_count, empty_const_slots)?),
+            3 => Self::Integer(ConstInteger::read(buf, consts_count, empty_const_slots)?),
+            4 => Self::Float(ConstFloat::read(buf, consts_count, empty_const_slots)?),
+            5 => Self::Long(ConstLong::read(buf, consts_count, empty_const_slots)?),
+            6 => Self::Double(ConstDouble::read(buf, consts_count, empty_const_slots)?),
+            7 => Self::Class(ConstClass::read(buf, consts_count, empty_const_slots)?),
+            8 => Self::String(ConstString::read(buf, consts_count, empty_const_slots)?),
+            9 => Self::FieldRef(ConstFieldRef::read(buf, consts_count, empty_const_slots)?),
+            10 => Self::MethodRef(ConstMethodRef::read(buf, consts_count, empty_const_slots)?),
+            11 => Self::InterfaceMethodRef(ConstInterfaceMethodRef::read(
+                buf,
+                consts_count,
+                empty_const_slots,
+            )?),
+            12 => Self::NameAndType(ConstNameAndType::read(
+                buf,
+                consts_count,
+                empty_const_slots,
+            )?),
+            15 => Self::MethodHandle(ConstMethodHandle::read(
+                buf,
+                consts_count,
+                empty_const_slots,
+            )?),
+            16 => Self::MethodType(ConstMethodType::read(buf, consts_count, empty_const_slots)?),
+            18 => Self::InvokeDynamic(ConstInvokeDynamic::read(
+                buf,
+                consts_count,
+                empty_const_slots,
+            )?),
             tag => return Err(ClassReaderError::InvalidConstItemTag(tag)),
         })
     }

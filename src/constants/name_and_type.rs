@@ -9,9 +9,9 @@ pub struct ConstNameAndType {
 }
 
 impl Read for ConstNameAndType {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
-        let name_index = ConstItemIdx::read(buf, consts_count)?;
-        let descriptor_index = ConstItemIdx::read(buf, consts_count)?;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
+        let name_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
+        let descriptor_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
 
         Ok(Self {
             name_index,

@@ -9,9 +9,9 @@ pub struct ConstFieldRef {
 }
 
 impl Read for ConstFieldRef {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
-        let class_index = ConstItemIdx::read(buf, consts_count)?;
-        let name_and_type_index = ConstItemIdx::read(buf, consts_count)?;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
+        let class_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
+        let name_and_type_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
 
         Ok(Self {
             class_index,

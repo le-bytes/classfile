@@ -51,9 +51,9 @@ impl Into<u8> for CPMethodHandleReferenceKind {
 }
 
 impl Read for CPMethodHandleReferenceKind {
-    fn read(buf: &mut Buffer, _consts_count: u16) -> Result<Self> {
+    fn read(buf: &mut Buffer, _consts_count: u16, _empty_const_slots: &[u16]) -> Result<Self> {
         let tag = buf.read_u8()?;
-        Self::try_from(tag).map_err(|_| ClassReaderError::InvalidMethodHanldeReferenceKind(tag))
+        Self::try_from(tag).map_err(|_| ClassReaderError::InvalidMethodHandleReferenceKind(tag))
     }
 }
 
@@ -64,9 +64,10 @@ pub struct ConstMethodHandle {
 }
 
 impl Read for ConstMethodHandle {
-    fn read(buf: &mut Buffer, consts_count: u16) -> Result<Self> {
-        let reference_kind = CPMethodHandleReferenceKind::read(buf, consts_count)?;
-        let reference_index = ConstItemIdx::read(buf, consts_count)?;
+    fn read(buf: &mut Buffer, consts_count: u16, empty_const_slots: &[u16]) -> Result<Self> {
+        let reference_kind =
+            CPMethodHandleReferenceKind::read(buf, consts_count, empty_const_slots)?;
+        let reference_index = ConstItemIdx::read(buf, consts_count, empty_const_slots)?;
 
         Ok(Self {
             reference_kind,

@@ -10,7 +10,7 @@ use crate::buffer::BufferError;
 pub enum ClassReaderError {
     InvalidMagicBytes(u32),
     InvalidConstantPoolIdx(u16),
-    InvalidMethodHanldeReferenceKind(u8),
+    InvalidMethodHandleReferenceKind(u8),
     InvalidConstItemTag(u8),
     InvalidClassAccessFlags(u16),
     InvalidFieldAccessFlags(u16),
@@ -33,7 +33,7 @@ impl Display for ClassReaderError {
             ClassReaderError::InvalidConstantPoolIdx(idx) => {
                 write!(f, "Invalid ConstantPool index `{}`", idx)
             }
-            ClassReaderError::InvalidMethodHanldeReferenceKind(val) => {
+            ClassReaderError::InvalidMethodHandleReferenceKind(val) => {
                 write!(
                     f,
                     "Invalid value `{}` for MethodHandle reference_kind (not in range 1..=9)",
