@@ -2,6 +2,7 @@
 name = "classfile"
 version = "0.1.0"
 edition = "2024"
+authors = ["Oxidized Steve <oxidized-steve@outlook.com>"]
 
 [dependencies]
 bitflags = "2.9.0"
